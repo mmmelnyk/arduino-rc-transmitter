@@ -1,22 +1,37 @@
-#include <Wire.h>
-#include <Adafruit_SSD1306.h>
-#include <Adafruit_GFX.h>
 #include <SPI.h>
-#include <nRF24L01.h>
+#include <nRF24L01.h>             //Download it here: https://www.electronoobs.com/eng_arduino_NRF24.php
 #include <RF24.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>         //Download it here: https://www.electronoobs.com/eng_arduino_Adafruit_GFX.php
+#include <Adafruit_SSD1306.h>     //Download it here: https://www.electronoobs.com/eng_arduino_Adafruit_SSD1306.php
 #include <EEPROM.h>
 
-// Display settings
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 64
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);  // No reset pin
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//OLED setup
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
+#define OLED_RESET     -1 // Reset pin (D4) (or -1 if sharing Arduino reset pin)
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+#define NUMFLAKES 5
+#define XPOS 0
+#define YPOS 0
+#define DELTAY 2
+#if (SSD1306_LCDHEIGHT != 32)
+#error("Height incorrect, please fix this in the Adafruit_SSD1306.h!");
+#endif
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
 
 /*Create a unique pipe out. The receiver has to
   wear the same unique code*/
+
 const uint64_t pipeOut = 0xE8E8F0F0E1LL; //IMPORTANT: The same as in the receiver!!!
 
-RF24 radio(9, 10); // CE, CSN
- 
+RF24 radio(9, 10); // select  CSN  pin
+
 // The size of this struct should not exceed 32 bytes
 // This gives us up to 32 8 bits channels
 struct MyData {
@@ -31,6 +46,8 @@ struct MyData {
 };
 
 MyData data;
+
+
 
 //Inputs outputs
 int battery_in = A7;                  //pin for analog in from the battery divider
@@ -99,36 +116,9 @@ void resetData()
 
 void setup()
 {
-  // Start Serial for debugging
-  Serial.begin(9600);
-  delay(100);
-  Serial.println("I2C Scanner");
-  for (byte address = 1; address < 127; ++address) {
-    Wire.beginTransmission(address);
-    if (Wire.endTransmission() == 0) {
-      Serial.print("Found device at 0x");
-      Serial.println(address, HEX);
-      
-    }
-  }
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-  // // Initialize I²C display
-  // if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
-  //   Serial.println(F("SSD1306 allocation failed"));
-  //   for (;;);  // Stop here if display not found
-  // }
-  
-  display.clearDisplay();
-  display.setTextSize(1);             //Set text size
-  display.setTextColor(WHITE);        //Choose color
-  display.setCursor(0, 15);
-  display.print("       Arduino");
-  display.setCursor(0, 25);
-  display.print("     Pistol-grip");
-  display.setCursor(0, 35);
-  display.print("     Transmitter");
-  display.display();
 
+  Serial.begin(9600);
+  
   if ( EEPROM.read(1) != 55)
   {
     EEPROM.write(2, 127);
@@ -161,6 +151,20 @@ void setup()
   pinMode(toggle_3, INPUT);
   pinMode(toggle_4, INPUT);
 
+
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 128x32)
+  delay(100);
+  display.clearDisplay();
+  display.setTextSize(1);             //Set text size
+  display.setTextColor(WHITE);        //Choose color
+  display.setCursor(0, 15);
+  display.print("       Arduino");
+  display.setCursor(0, 25);
+  display.print("     Pistol-grip");
+  display.setCursor(0, 35);
+  display.print("     Transmitter");
+
+
   digitalWrite(buzzer, HIGH);
   delay(40);
   digitalWrite(buzzer, LOW);
@@ -169,15 +173,11 @@ void setup()
   delay(40);
   digitalWrite(buzzer, LOW);
 
-  //delay(2000);
+  display.display();
+  delay(2000);
 
   //Start everything up
   radio.begin();
-  if (radio.isChipConnected()) {
-    Serial.println("nRF24L01+ is connected and working.");
-  } else {
-    Serial.println("nRF24L01+ is NOT responding.");
-  }
   radio.setAutoAck(false);
   
   radio.setPALevel(RF24_PA_HIGH);
@@ -235,7 +235,6 @@ void loop()
     pot1_increase = false;
     pot2_increase = false;
   }
-  //////////////////////////////////////////////////////////////////////////////////////////
 
   //THROTTLE buttons
   if (button_read < 260 && button_read > 200 && !throttle_decrease)
@@ -262,7 +261,6 @@ void loop()
       digitalWrite(buzzer, LOW);
     }
   }
-  //////////////////////////////////////////////////////////////////////////////////////////
 
   //STEERING buttons
   if (button_read < 500 && button_read > 430 && !steer_decrease)
@@ -289,7 +287,6 @@ void loop()
       digitalWrite(buzzer, LOW);
     }
   }
-  //////////////////////////////////////////////////////////////////////////////////////////
 
   //POT1 buttons (Disabled)
   if (button_read < 610 && button_read > 550 && !pot1_decrease)
@@ -344,7 +341,6 @@ void loop()
     }
   }
 
-
   //Mode select button
   if (!digitalRead(mode_in) && !mode_button_pressed)
   {
@@ -374,8 +370,6 @@ void loop()
     }
     counter = counter + 1;
   }
-
-
 
   //Invert channels
   //STEER INVERT
@@ -470,10 +464,6 @@ void loop()
     invert_counter = invert_counter + 1;
   }
 
-
-
-
-
   if (digitalRead(mode_in) && mode_button_pressed)
   {
     mode_button_pressed = false;
@@ -481,7 +471,6 @@ void loop()
     counter = 0;
     invert_counter = 0;
   }
-
 
   //Mode select
   if (!mode)
@@ -499,9 +488,6 @@ void loop()
     pot1_to_send = map_exponential(analogRead(pot1_in),       pot1_inverted);
     pot2_to_send = map_exponential(analogRead(pot2_in),         pot2_inverted);
   }
-
-
-
 
   throttle_to_send = throttle_to_send  + throttle_fine - 127;
   steer_to_send = steer_to_send  + steer_fine - 127;
@@ -535,13 +521,13 @@ void loop()
   display.setCursor(90, 0);           //Select where to print 124 x 64
   display.print(battery_level, 1);
   display.print("V");
-  //
+  
   display.setCursor(0, 16);           //Select where to print 124 x 64
   display.print("POT1:");
   display.print(pot1_to_send);
-  display.print("       POT2:");
+  display.print("      POT2:");
   display.print(pot2_to_send);
-  //
+  
   display.setCursor(0, 30);
   display.print("TH: ");
   display.print(throttle_to_send);
@@ -569,9 +555,6 @@ void loop()
     display.print("Mode: ");
     display.print("Linear");
   }
-  //
+  
   display.display();
-
-
-
 }
