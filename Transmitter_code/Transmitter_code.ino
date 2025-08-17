@@ -20,15 +20,10 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #if (SSD1306_LCDHEIGHT != 32)
 #error("Height incorrect, please fix this in the Adafruit_SSD1306.h!");
 #endif
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-
-
-/*Create a unique pipe out. The receiver has to
-  wear the same unique code*/
-
-const uint64_t pipeOut = 0xE8E8F0F0E1LL; //IMPORTANT: The same as in the receiver!!!
+//IMPORTANT:
+//Create a unique pipe out. The receiver has to wear the same unique code as in the receiver
+const uint64_t pipeOut = 0xE8E8F0F0E1LL;
 
 RF24 radio(9, 10); // select  CSN  pin
 
@@ -44,10 +39,7 @@ struct MyData {
   byte AUX3;
   byte AUX4;
 };
-
 MyData data;
-
-
 
 //Inputs outputs
 int battery_in = A7;                  //pin for analog in from the battery divider
@@ -116,7 +108,6 @@ void resetData()
 
 void setup()
 {
-
   Serial.begin(9600);
   
   if ( EEPROM.read(1) != 55)
@@ -188,9 +179,6 @@ void setup()
 
 /**************************************************/
 
-
-
-
 int map_normal(int val, int lower, int middle, int upper, bool reverse)
 {
   val = constrain(val, lower, upper);
@@ -201,10 +189,6 @@ int map_normal(int val, int lower, int middle, int upper, bool reverse)
   return ( reverse ? 255 - val : val );
 }
 
-
-
-
-
 // Returns a corrected value for a joystick position that takes into account
 // the values of the outer extents and the middle of the joystick range.
 int map_exponential(int val, bool reverse)
@@ -214,12 +198,10 @@ int map_exponential(int val, bool reverse)
   return ( reverse ? 255 - cube : cube );
 }
 
-
 void loop()
 {
   //battery read
   battery_level = analogRead(battery_in) / 201.993; //////Voltage divider is 10k and 20K so 1/3
-
 
   //Buttons read
   button_read = analogRead(buttons_analog_in);
@@ -489,7 +471,7 @@ void loop()
     pot2_to_send = map_exponential(analogRead(pot2_in),         pot2_inverted);
   }
 
-  throttle_to_send = throttle_to_send  + throttle_fine - 127;
+  throttle_to_send = throttle_to_send  + throttle_fine - 111;
   steer_to_send = steer_to_send  + steer_fine - 127;
   pot1_to_send = pot1_to_send  + pot1_fine - 111;
   pot2_to_send = pot2_to_send  + pot2_fine - 166;
