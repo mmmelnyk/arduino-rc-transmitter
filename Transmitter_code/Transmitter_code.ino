@@ -68,9 +68,9 @@ int steer_to_send = 0;
 int pot1_to_send = 0;
 int pot2_to_send = 0;
 
-bool throttle_inverted = false;
-bool steer_inverted = true;
-bool pot1_inverted = true;
+bool throttle_inverted = true;
+bool steer_inverted = false;
+bool pot1_inverted = false;
 bool pot2_inverted = false;
 
 bool steer_decrease = false;
@@ -110,6 +110,7 @@ void setup()
 {
   Serial.begin(9600);
   
+  // this section might need to be executed separatly to be applied if you already had some version of data recorder
   if ( EEPROM.read(1) != 55)
   {
     EEPROM.write(2, 127);
@@ -119,7 +120,7 @@ void setup()
     EEPROM.write(6, 1);
     EEPROM.write(7, 0);
     EEPROM.write(8, 0);
-    EEPROM.write(9, 1);
+    EEPROM.write(9, 0);
     EEPROM.write(1, 55);
   }
 
@@ -471,10 +472,10 @@ void loop()
     pot2_to_send = map_exponential(analogRead(pot2_in),         pot2_inverted);
   }
 
-  throttle_to_send = throttle_to_send  + throttle_fine - 111;
+  throttle_to_send = throttle_to_send  + throttle_fine - 126;
   steer_to_send = steer_to_send  + steer_fine - 127;
-  pot1_to_send = pot1_to_send  + pot1_fine - 111;
-  pot2_to_send = pot2_to_send  + pot2_fine - 166;
+  pot1_to_send = pot1_to_send  + pot1_fine - 127;
+  pot2_to_send = pot2_to_send  + pot2_fine - 126;
 
 
   data.throttle = constrain(throttle_to_send, 0, 255);
@@ -500,20 +501,20 @@ void loop()
     display.setCursor(0, 0);           //Select where to print 124 x 64
     display.print("Sound OFF");
   }
-  display.setCursor(90, 0);           //Select where to print 124 x 64
+  display.setCursor(85, 0);           //Select where to print 124 x 64
   display.print(battery_level, 1);
   display.print("V");
   
   display.setCursor(0, 16);           //Select where to print 124 x 64
   display.print("POT1:");
   display.print(pot1_to_send);
-  display.print("      POT2:");
+  display.print("     POT2:");
   display.print(pot2_to_send);
   
   display.setCursor(0, 30);
   display.print("TH: ");
   display.print(throttle_to_send);
-  display.print("      T1: ");
+  display.print("     T1: ");
   display.print(digitalRead(toggle_2));
   display.print("|");
   display.print(digitalRead(toggle_1));
@@ -521,7 +522,7 @@ void loop()
   display.setCursor(0, 41);
   display.print("ST: ");
   display.print(steer_to_send);
-  display.print("      T2: ");
+  display.print("     T2: ");
   display.print(digitalRead(toggle_3));
   display.print("|");
   display.print(digitalRead(toggle_4));
